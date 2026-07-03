@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ESTOQUE — Controle de Produtos</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <div id="lock">
+    <div>
+      <div class="mark">ESTOQUE<span>•</span></div>
+      <div class="sub" id="lock-sub">Crie um PIN de acesso</div>
+    </div>
+    <div class="pin-dots" id="pin-dots"></div>
+    <div class="keypad" id="keypad"></div>
+    <div class="err" id="lock-err"></div>
+  </div>
+
+  <header class="top">
+    <div class="top-row">
+      <h1>ESTO<span>QUE</span></h1>
+      <button class="icon-btn" id="btn-lock" title="Bloquear">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="barcode-rule" style="margin:10px 18px 0;"></div>
+
+  <div class="view active" id="view-lista">
+    <div class="stats" id="stats"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AA" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search" placeholder="Buscar por nome ou código...">
+      </div>
+    </div>
+    <div class="filter-row" id="filters"></div>
+    <main>
+      <div id="product-list"></div>
+    </main>
+  </div>
+
+  <div class="view" id="view-scanner">
+    <div id="scanner-view">
+      <div class="scan-frame">
+        <div id="reader"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="scan-hint">Aponte a câmera para o código de barras.<br>Ou digite o código manualmente abaixo.</div>
+      <div class="manual-code">
+        <input type="text" id="manual-code-input" placeholder="Código do produto" class="mono">
+        <button class="btn primary" id="btn-manual-scan">Buscar</button>
+      </div>
+      <div id="scan-result-area"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-historico">
+    <main style="padding-top:6px;">
+      <h2 style="font-size:15px; color:var(--ink-dim); margin-bottom:8px; letter-spacing:0.06em;">MOVIMENTAÇÕES</h2>
+      <div id="history-list"></div>
+    </main>
+  </div>
+
+  <div class="view" id="view-ajustes">
+    <main style="padding-top:6px;">
+      <h2 style="font-size:15px; color:var(--ink-dim); margin-bottom:4px; letter-spacing:0.06em;">DADOS</h2>
+      <div class="settings-item">
+        <div><div>Exportar backup (.json)</div><div class="l">Salva produtos e histórico</div></div>
+        <button class="btn ghost" id="btn-export">Exportar</button>
+      </div>
+      <div class="settings-item">
+        <div><div>Importar backup (.json)</div><div class="l">Substitui os dados atuais</div></div>
+        <button class="btn ghost" id="btn-import">Importar</button>
+      </div>
+      <input type="file" id="file-import" accept="application/json" style="display:none;">
+      <h2 style="font-size:15px; color:var(--ink-dim); margin:22px 0 4px; letter-spacing:0.06em;">SEGURANÇA</h2>
+      <div class="settings-item">
+        <div><div>Alterar PIN</div><div class="l">Bloqueio local do app</div></div>
+        <button class="btn ghost" id="btn-change-pin">Alterar</button>
+      </div>
+      <div class="settings-item" style="border-bottom:none;">
+        <div><div>Apagar tudo</div><div class="l">Produtos, histórico e PIN</div></div>
+        <button class="btn ghost" id="btn-wipe" style="color:var(--danger); border-color:var(--danger);">Apagar</button>
+      </div>
+    </main>
+  </div>
+
+  <button class="fab" id="fab-add">+</button>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-view="lista">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Estoque
+    </button>
+    <button class="tab-btn" data-view="scanner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg>
+      Scanner
+    </button>
+    <button class="tab-btn" data-view="historico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5M12 7v5l4 2"/></svg>
+      Histórico
+    </button>
+    <button class="tab-btn" data-view="ajustes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+      Ajustes
+    </button>
+  </nav>
+
+  <div class="sheet-overlay" id="sheet-product">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="product-sheet-title">Novo produto</h2>
+      <div class="field">
+        <label>Nome do produto</label>
+        <input type="text" id="f-name" placeholder="Ex: Fone Bluetooth XR200">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Código / SKU</label>
+          <input type="text" id="f-code" class="mono" placeholder="7891234567890">
+        </div>
+        <div class="field">
+          <label>Categoria</label>
+          <input type="text" id="f-category" placeholder="Áudio">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Quantidade</label>
+          <input type="number" id="f-qty" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Estoque mínimo</label>
+          <input type="number" id="f-min" min="0" placeholder="5">
+        </div>
+      </div>
+      <div class="field">
+        <label>Preço unitário (R$)</label>
+        <input type="number" id="f-price" min="0" step="0.01" placeholder="0,00">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" id="btn-cancel-product">Cancelar</button>
+        <button class="btn primary" id="btn-save-product">Salvar</button>
+      </div>
+      <button class="danger-link" id="btn-delete-product" style="display:none;">Excluir produto</button>
+    </div>
+  </div>
+
+  <div class="sheet-overlay" id="sheet-pin">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2>Alterar PIN</h2>
+      <div class="field">
+        <label>Novo PIN (4 dígitos)</label>
+        <input type="password" id="f-newpin" maxlength="4" inputmode="numeric" placeholder="••••">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" id="btn-cancel-pin">Cancelar</button>
+        <button class="btn primary" id="btn-save-pin">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
